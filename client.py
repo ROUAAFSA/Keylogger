@@ -9,7 +9,7 @@ files = [log_file]
 def send_logs():
 
     s = socket.socket()
-    s.connect(("localhost", 9999))
+    s.connect(("192.168.0.227", 9999))
     print("Connected to server")
         
     for filename in files:
