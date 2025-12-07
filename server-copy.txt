@@ -129,3 +129,68 @@ L["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-06 14:35:46", "=== New Sessi
 L["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-06 14:35:56", "=== New Session ==="]
 ["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-06 14:35:57", "=== Session Ended (Manual Stop) ==="]
 
+
+============================================================
+[Connection from 127.0.0.1 at 2025-12-07 18:01:07]
+============================================================
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:00:55", "=== Session Started ==="]
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:01:07", "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&"]
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:01:07", "=== Session Ended (Manual Stop) ==="]
+
+
+============================================================
+[Connection from 127.0.0.1 at 2025-12-07 18:01:44]
+============================================================
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:01:32", "=== Session Started ==="]
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:01:44", "=== Session Ended (Manual Stop) ==="]
+
+
+============================================================
+[Connection from 127.0.0.1 at 2025-12-07 18:02:29]
+============================================================
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:02:21", "=== Session Started ==="]
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:02:29", "=== Session Ended (Manual Stop) ==="]
+
+
+============================================================
+[Connection from 127.0.0.1 at 2025-12-07 18:02:53]
+============================================================
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:02:49", "=== Session Started ==="]
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:02:53", "=== Session Ended (Manual Stop) ==="]
+
+
+============================================================
+[Connection from 127.0.0.1 at 2025-12-07 18:03:17]
+============================================================
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:02:57", "=== Session Started ==="]
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:03:17", "fffffffffffffffffffffffffffffffff"]
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:03:17", "=== Session Ended (Manual Stop) ==="]
+
+
+============================================================
+[Connection from 127.0.0.1 at 2025-12-07 18:05:26]
+============================================================
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:05:16", "=== Session Started ==="]
+
+
+============================================================
+[Connection from 127.0.0.1 at 2025-12-07 18:05:36]
+============================================================
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:05:26", "=== New Session ==="]
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:05:31", "aaaaaaaaaaaaaaaaaaaaaaaaaaa"]
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:05:32", "rrrrrrrrrrrrrrrrrrrrrrr"]
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:05:33", "t"]
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:05:34", "t"]
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:05:35", "y"]
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:05:35", "y"]
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:05:36", "hjg"]
+
+
+============================================================
+[Connection from 127.0.0.1 at 2025-12-07 18:05:38]
+============================================================
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:05:36", "=== New Session ==="]
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:05:36", "*d"]
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:05:36", "g"]
+["Administrator@WIN-OME3QRRSE98_Windows", "2025-12-07 18:05:38", "=== Session Ended (Manual Stop) ==="]
+
