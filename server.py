@@ -5,23 +5,23 @@ import datetime
 import threading
 import json
 
-# SERVER CONFIGURATION
+
 SERVER_PORT = 9999
 LOG_FILE = 'server-copy.txt'
 
-# Configuration that will be sent to clients (YOU CAN CHANGE THIS ANYTIME!)
+# init config 
 CLIENT_CONFIG = {
-    'send_interval': 10,  # Seconds between sends
+    'send_interval': 10, 
     'buffer_size': 1024,
     'retry_attempts': 3,
-    'config_check_interval': 30  # How often clients check for config updates
+    'config_check_interval': 30
 }
 
-# Lock for thread-safe config updates
+# Lock thread
 config_lock = threading.Lock()
 
 def update_config(new_interval):
-    """Update the send interval (can be called from GUI or command line)"""
+    """Update the send interval"""
     global CLIENT_CONFIG
     with config_lock:
         CLIENT_CONFIG['send_interval'] = new_interval
@@ -32,7 +32,7 @@ def update_config(new_interval):
         print(f"{'='*60}\n")
 
 def handle_config_request(client_socket, address):
-    """Send current configuration to client"""
+    """Send config to client"""
     try:
         with config_lock:
             config_json = json.dumps(CLIENT_CONFIG)
@@ -70,7 +70,7 @@ def handle_log_upload(client_socket, address):
         client_socket.close()
 
 def handle_client(client_socket, address):
-    """Determine what the client wants (config or upload)"""
+    """Determine what the client wants"""
     try:
         request_type = client_socket.recv(1).decode('utf-8')
         
@@ -87,7 +87,7 @@ def handle_client(client_socket, address):
         client_socket.close()
 
 def command_interface():
-    """Command line interface to change settings while server runs"""
+    """change setting from cli"""
     print("\nCommand Interface Started (type 'help' for commands)\n")
     
     while True:
