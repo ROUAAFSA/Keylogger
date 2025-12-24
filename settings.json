@@ -1,0 +1,10 @@
+{
+  "auto_stop_enabled": false,
+  "auto_stop_minutes": 1,
+  "send_interval_seconds": 10,
+  "server_port": 9999,
+  "default_export_folder": "",
+  "default_export_format": "txt",
+  "log_file_path": "server-copy.txt",
+  "theme": "dark"
+}

