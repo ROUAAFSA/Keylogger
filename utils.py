@@ -8,17 +8,30 @@ import json
 import re
 import datetime
 import subprocess
+import secrets
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from typing import Optional, Tuple, List, Dict
 
 
+# ==================== SESSION MANAGEMENT ====================
+
+def generate_session_id() -> str:
+    """Generate a short unique session ID."""
+    timestamp = datetime.datetime.now().strftime('%H%M%S')  # Just time: HHMMSS
+    random_part = secrets.token_hex(2)  # 4 character random hex
+    return f"{timestamp}-{random_part}"
+
+
 # ==================== SERVER MANAGEMENT ====================
 
-def start_server(server_script: str) -> Tuple[Optional[subprocess.Popen], bool, Optional[str]]:
-    """Start the server process."""
+def start_server(server_script: str, session_id: str = None) -> Tuple[Optional[subprocess.Popen], bool, Optional[str]]:
+    """Start the server process with optional session ID."""
     try:
-        process = subprocess.Popen(["python", server_script])
+        env = os.environ.copy()
+        if session_id:
+            env['SESSION_ID'] = session_id
+        process = subprocess.Popen(["python", server_script], env=env)
         return process, True, None
     except Exception as e:
         return None, False, str(e)
@@ -196,7 +209,7 @@ def encrypt_logs(log_file: str) -> Tuple[bool, Optional[str]]:
         
         ciphertext, tag = cipher.encrypt_and_digest(data)
         
-        with open("logs.enc", "wb") as f:
+        with open("logs.encrypted", "wb") as f:
             f.write(cipher.nonce + tag + ciphertext)
         
         with open("logs.key", "wb") as f:

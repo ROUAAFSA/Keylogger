@@ -165,3 +165,28 @@ Connection Info,Device ID,Timestamp,Log Entry
 [Connection from 127.0.0.1 at 2025-12-14 14:14:22],Administrator@WIN-OME3QRRSE98_Windows,2025-12-14 14:14:12,=== New Session ===
 [Connection from 127.0.0.1 at 2025-12-14 14:14:25],Administrator@WIN-OME3QRRSE98_Windows,2025-12-14 14:14:22,=== New Session ===
 [Connection from 127.0.0.1 at 2025-12-14 14:14:25],Administrator@WIN-OME3QRRSE98_Windows,2025-12-14 14:14:25,=== Session Ended (Manual Stop) ===
+[Connection from 127.0.0.1 at 2025-12-24 12:22:19],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:21:49,=== Session Started ===
+[Connection from 127.0.0.1 at 2025-12-24 12:23:21],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:22:19,=== New Session ===
+[Connection from 127.0.0.1 at 2025-12-24 12:23:21],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:23:10,hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh2
+[Connection from 127.0.0.1 at 2025-12-24 12:23:51],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:23:21,=== New Session ===
+[Connection from 127.0.0.1 at 2025-12-24 12:24:21],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:23:51,=== New Session ===
+[Connection from 127.0.0.1 at 2025-12-24 12:24:52],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:24:22,=== New Session ===
+[Connection from 127.0.0.1 at 2025-12-24 12:24:52],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:24:27,10jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj
+[Connection from 127.0.0.1 at 2025-12-24 12:24:52],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:24:30,jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj
+[Connection from 127.0.0.1 at 2025-12-24 12:29:06],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:24:52,=== New Session ===
+[Connection from 127.0.0.1 at 2025-12-24 12:29:06],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:25:59,ooooooooooooooooooooooooooooooooooooooi set the send interval to 10s in the settings but it still sent after 30s 
+[Connection from 127.0.0.1 at 2025-12-24 12:29:36],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:29:06,=== New Session ===
+[Connection from 127.0.0.1 at 2025-12-24 12:30:06],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:29:36,=== New Session ===
+[Connection from 127.0.0.1 at 2025-12-24 12:30:36],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:30:06,=== New Session ===
+[Connection from 127.0.0.1 at 2025-12-24 12:31:06],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:30:36,=== New Session ===
+[Connection from 127.0.0.1 at 2025-12-24 12:31:36],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:31:06,=== New Session ===
+[Connection from 127.0.0.1 at 2025-12-24 12:36:51],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:31:36,=== New Session ===
+[Connection from 127.0.0.1 at 2025-12-24 12:36:51],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:33:14,did u call for the setting value in the server?5 i set it for 5s now i even waited for the check config time which is 30s the json file updates correctly :
+[Connection from 127.0.0.1 at 2025-12-24 12:36:51],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:33:56,=== Session Ended (Manual Stop) ===
+[Connection from 127.0.0.1 at 2025-12-24 12:36:51],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:36:05,=== Session Started ===
+[Connection from 127.0.0.1 at 2025-12-24 12:36:51],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:36:36,quit
+[Connection from 127.0.0.1 at 2025-12-24 12:37:01],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:36:51,=== New Session ===
+[Connection from 127.0.0.1 at 2025-12-24 12:37:11],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:37:01,=== New Session ===
+[Connection from 127.0.0.1 at 2025-12-24 12:37:20],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:37:11,=== New Session ===
+[Connection from 127.0.0.1 at 2025-12-24 12:37:20],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:37:20,5
+[Connection from 127.0.0.1 at 2025-12-24 12:37:20],roua afsa@DESKTOP-LA5Q38B_Windows,2025-12-24 12:37:20,=== Session Ended (Manual Stop) ===
