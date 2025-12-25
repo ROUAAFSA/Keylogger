@@ -90,8 +90,22 @@ def get_log_count(log_file: str) -> int:
 def clear_logs(log_file: str) -> Tuple[bool, Optional[str]]:
     """Clear the log file."""
     try:
-        open(log_file, 'w').close()
-        return True, None
+        # Check if file exists
+        if not os.path.exists(log_file):
+            return True, None  # Already clear
+        
+        # Try to clear the file
+        with open(log_file, 'w', encoding='utf-8') as f:
+            f.write('')
+        
+        # Verify it was cleared
+        if os.path.getsize(log_file) == 0:
+            return True, None
+        else:
+            return False, "File was not cleared properly"
+            
+    except PermissionError:
+        return False, "Permission denied - file may be in use by server"
     except Exception as e:
         return False, str(e)
 
@@ -195,26 +209,76 @@ def export_to_json(sessions: List[Dict], output_path: str) -> Tuple[bool, Option
 
 # ==================== ENCRYPTION ====================
 
-def encrypt_logs(log_file: str) -> Tuple[bool, Optional[str]]:
-    """Encrypt log file with AES-256."""
+def encrypt_logs_with_password(log_file: str, password: str, output_file: str = "logs.encrypted") -> Tuple[bool, Optional[str]]:
+    """Encrypt log file with AES-256 using user password."""
     if not os.path.exists(log_file):
         return False, "Log file not found"
     
+    if not password or len(password) < 4:
+        return False, "Password must be at least 4 characters"
+    
     try:
-        key = get_random_bytes(32)
+        # Generate a random salt
+        salt = get_random_bytes(32)
+        
+        # Derive key from password using PBKDF2
+        from Crypto.Protocol.KDF import PBKDF2
+        key = PBKDF2(password, salt, dkLen=32, count=100000)
+        
+        # Create cipher
         cipher = AES.new(key, AES.MODE_EAX)
         
+        # Read log file
         with open(log_file, "rb") as f:
             data = f.read()
         
+        # Encrypt
         ciphertext, tag = cipher.encrypt_and_digest(data)
         
-        with open("logs.encrypted", "wb") as f:
-            f.write(cipher.nonce + tag + ciphertext)
-        
-        with open("logs.key", "wb") as f:
-            f.write(key)
+        # Save encrypted file with salt, nonce, tag, and ciphertext
+        with open(output_file, "wb") as f:
+            f.write(salt)  # 32 bytes
+            f.write(cipher.nonce)  # 16 bytes
+            f.write(tag)  # 16 bytes
+            f.write(ciphertext)  # variable length
         
         return True, None
+    except Exception as e:
+        return False, str(e)
+
+
+def decrypt_logs_with_password(encrypted_file: str, password: str, output_file: str) -> Tuple[bool, Optional[str]]:
+    """Decrypt log file with AES-256 using user password."""
+    if not os.path.exists(encrypted_file):
+        return False, "Encrypted file not found"
+    
+    if not password:
+        return False, "Password required"
+    
+    try:
+        # Read encrypted file
+        with open(encrypted_file, "rb") as f:
+            salt = f.read(32)
+            nonce = f.read(16)
+            tag = f.read(16)
+            ciphertext = f.read()
+        
+        # Derive key from password using same parameters
+        from Crypto.Protocol.KDF import PBKDF2
+        key = PBKDF2(password, salt, dkLen=32, count=100000)
+        
+        # Create cipher
+        cipher = AES.new(key, AES.MODE_EAX, nonce=nonce)
+        
+        # Decrypt and verify
+        plaintext = cipher.decrypt_and_verify(ciphertext, tag)
+        
+        # Save decrypted file
+        with open(output_file, "wb") as f:
+            f.write(plaintext)
+        
+        return True, None
+    except ValueError:
+        return False, "Wrong password or corrupted file"
     except Exception as e:
         return False, str(e)

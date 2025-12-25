@@ -418,29 +418,110 @@ class KeyloggerServerGUI(QWidget):
             QMessageBox.critical(self, "Error", str(e))
 
     def encrypt_logs(self):
+        from PyQt6.QtWidgets import QInputDialog, QLineEdit
+        
         log_file = self.settings["log_file_path"]
-        success, error = utils.encrypt_logs(log_file)
+        
+        # Check if log file exists
+        if not os.path.exists(log_file):
+            QMessageBox.warning(self, "Error", "No log file to encrypt")
+            return
+        
+        # Ask user for password
+        password, ok = QInputDialog.getText(
+            self, 
+            "Encrypt Logs", 
+            "Enter encryption password:\n(minimum 4 characters)",
+            QLineEdit.EchoMode.Password
+        )
+        
+        if not ok:
+            return  # User cancelled
+        
+        if not password or len(password) < 4:
+            QMessageBox.warning(self, "Invalid Password", 
+                "Password must be at least 4 characters long")
+            return
+        
+        # Confirm password
+        password2, ok = QInputDialog.getText(
+            self, 
+            "Confirm Password", 
+            "Re-enter password to confirm:",
+            QLineEdit.EchoMode.Password
+        )
+        
+        if not ok:
+            return  # User cancelled
+        
+        if password != password2:
+            QMessageBox.warning(self, "Password Mismatch", 
+                "Passwords do not match!")
+            return
+        
+        # Generate timestamped filename
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        encrypted_filename = f"logs_encrypted_{timestamp}.enc"
+        
+        # Encrypt with password
+        success, error = utils.encrypt_logs_with_password(log_file, password, encrypted_filename)
+        
         if success:
             QMessageBox.information(self, "Success", 
-                "Encrypted!\nFiles: logs.encrypted + logs.key")
+                f"Logs encrypted successfully!\n\n"
+                f"Encrypted file: {encrypted_filename}\n\n"
+                f"⚠ REMEMBER YOUR PASSWORD!\n"
+                f"You will need it to decrypt.\n\n"
+                f"To decrypt later, use the provided decrypt script.")
         else:
-            QMessageBox.critical(self, "Error", f"Failed: {error}")
+            QMessageBox.critical(self, "Error", f"Encryption failed: {error}")
 
     def delete_logs(self):
         reply = QMessageBox.question(self, "Confirm", 
-            "Delete all logs?",
+            "Delete all logs?\n\nNote: For best results, stop the server first.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         
         if reply == QMessageBox.StandardButton.Yes:
             log_file = self.settings["log_file_path"]
-            success, error = utils.clear_logs(log_file)
-            if success:
+            
+            # Check if file exists and get size before deletion
+            if os.path.exists(log_file):
+                size_before = os.path.getsize(log_file)
+                
+                # Clear the logs
+                success, error = utils.clear_logs(log_file)
+                
+                if success:
+                    # Clear the interface
+                    self.logs_text.clear()
+                    self.total_logs_label.setText("0")
+                    self.last_log_size = 0
+                    
+                    # Verify deletion
+                    if os.path.exists(log_file):
+                        size_after = os.path.getsize(log_file)
+                        if size_after == 0:
+                            QMessageBox.information(self, "Success", 
+                                f"Logs deleted successfully!\n\nCleared {size_before:,} bytes")
+                        else:
+                            QMessageBox.warning(self, "Partial Success", 
+                                f"File was cleared but server may still be writing.\n\n"
+                                f"Size before: {size_before:,} bytes\n"
+                                f"Size after: {size_after:,} bytes\n\n"
+                                f"Consider stopping the server first.")
+                    else:
+                        QMessageBox.information(self, "Success", "Logs deleted!")
+                else:
+                    QMessageBox.critical(self, "Error", 
+                        f"Failed to delete logs: {error}\n\n"
+                        f"Try stopping the server first.")
+            else:
+                # File doesn't exist - clear interface anyway
                 self.logs_text.clear()
                 self.total_logs_label.setText("0")
                 self.last_log_size = 0
-                QMessageBox.information(self, "Success", "Logs deleted!")
-            else:
-                QMessageBox.critical(self, "Error", f"Failed: {error}")
+                QMessageBox.information(self, "Info", "No log file found (already empty)")
+
 
 
 if __name__ == "__main__":
