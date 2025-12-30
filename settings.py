@@ -9,7 +9,6 @@ from PyQt6.QtWidgets import (
     QFileDialog, QMessageBox, QComboBox
 )
 
-# Default settings
 DEFAULT_SETTINGS = {
     "auto_stop_enabled": False,
     "auto_stop_minutes": 60,
@@ -18,12 +17,10 @@ DEFAULT_SETTINGS = {
     "default_export_folder": "",
     "default_export_format": "txt",
     "log_file_path": "server-copy.txt",
-    "theme": "dark"
 }
 
-
 class SettingsWindow(QDialog):
-    """Settings configuration window."""
+    """Settings configuration window"""
     
     def __init__(self, parent=None, current_settings=None):
         super().__init__(parent)
@@ -79,14 +76,12 @@ class SettingsWindow(QDialog):
         file_group = QGroupBox("File Configuration")
         file_layout = QVBoxLayout()
         
-        # Log file path
         log_layout = QHBoxLayout()
         log_layout.addWidget(QLabel("Log File:"))
         self.log_file_input = QLineEdit()
         log_layout.addWidget(self.log_file_input)
         file_layout.addLayout(log_layout)
         
-        # Default export folder
         export_layout = QHBoxLayout()
         export_layout.addWidget(QLabel("Export Folder:"))
         self.export_folder_input = QLineEdit()
@@ -96,7 +91,6 @@ class SettingsWindow(QDialog):
         export_layout.addWidget(browse_btn)
         file_layout.addLayout(export_layout)
         
-        # Default export format
         format_layout = QHBoxLayout()
         format_layout.addWidget(QLabel("Default Format:"))
         self.format_combo = QComboBox()
@@ -124,14 +118,12 @@ class SettingsWindow(QDialog):
         save_btn = QPushButton("Save")
         save_btn.clicked.connect(self.save_settings)
         button_layout.addWidget(save_btn)
-
-        
         
         layout.addLayout(button_layout)
         self.setLayout(layout)
     
     def load_settings(self):
-        """Load current settings into form."""
+        """Load current settings into form"""
         self.auto_stop_checkbox.setChecked(self.settings["auto_stop_enabled"])
         self.auto_stop_time.setValue(self.settings["auto_stop_minutes"])
         self.send_interval.setValue(self.settings["send_interval_seconds"])
@@ -139,19 +131,18 @@ class SettingsWindow(QDialog):
         self.export_folder_input.setText(self.settings["default_export_folder"])
         self.log_file_input.setText(self.settings["log_file_path"])
         
-        # Set default format
         format_index = self.format_combo.findText(self.settings.get("default_export_format", "txt"))
         if format_index >= 0:
             self.format_combo.setCurrentIndex(format_index)
     
     def browse_export_folder(self):
-        """Browse for export folder."""
+        """Browse for export folder"""
         folder = QFileDialog.getExistingDirectory(self, "Select Export Folder")
         if folder:
             self.export_folder_input.setText(folder)
     
     def save_settings(self):
-        """Save settings and close."""
+        """Save settings and close"""
         self.settings["auto_stop_enabled"] = self.auto_stop_checkbox.isChecked()
         self.settings["auto_stop_minutes"] = self.auto_stop_time.value()
         self.settings["send_interval_seconds"] = self.send_interval.value()
@@ -162,7 +153,7 @@ class SettingsWindow(QDialog):
         self.accept()
     
     def reset_defaults(self):
-        """Reset all settings to defaults."""
+        """Reset all settings to defaults"""
         reply = QMessageBox.question(
             self, "Reset Settings",
             "Reset all settings to defaults?",
@@ -174,7 +165,7 @@ class SettingsWindow(QDialog):
             self.load_settings()
     
     def apply_styles(self):
-        """Apply dark theme styles."""
+        """Apply dark theme styles"""
         self.setStyleSheet("""
             QDialog {
                 background-color: #2b2b2b;

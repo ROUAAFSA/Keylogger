@@ -13,20 +13,18 @@ from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from typing import Optional, Tuple, List, Dict
 
-
 # ==================== SESSION MANAGEMENT ====================
 
 def generate_session_id() -> str:
-    """Generate a short unique session ID."""
-    timestamp = datetime.datetime.now().strftime('%H%M%S')  # Just time: HHMMSS
-    random_part = secrets.token_hex(2)  # 4 character random hex
+    """Generate unique session ID: HHMMSS-XXXX"""
+    timestamp = datetime.datetime.now().strftime('%H%M%S')
+    random_part = secrets.token_hex(2)
     return f"{timestamp}-{random_part}"
-
 
 # ==================== SERVER MANAGEMENT ====================
 
 def start_server(server_script: str, session_id: str = None) -> Tuple[Optional[subprocess.Popen], bool, Optional[str]]:
-    """Start the server process with optional session ID."""
+    """Start server process with optional session ID"""
     try:
         env = os.environ.copy()
         if session_id:
@@ -36,9 +34,8 @@ def start_server(server_script: str, session_id: str = None) -> Tuple[Optional[s
     except Exception as e:
         return None, False, str(e)
 
-
 def stop_server(process: subprocess.Popen) -> Tuple[bool, Optional[str]]:
-    """Stop the server process."""
+    """Stop server process"""
     try:
         process.terminate()
         process.wait(timeout=5)
@@ -46,9 +43,8 @@ def stop_server(process: subprocess.Popen) -> Tuple[bool, Optional[str]]:
     except Exception as e:
         return False, str(e)
 
-
 def get_uptime(start_time: datetime.datetime) -> str:
-    """Get formatted uptime string."""
+    """Get formatted uptime string HH:MM:SS"""
     if not start_time:
         return "00:00:00"
     
@@ -57,11 +53,10 @@ def get_uptime(start_time: datetime.datetime) -> str:
     minutes, seconds = divmod(remainder, 60)
     return f"{hours:02}:{minutes:02}:{seconds:02}"
 
-
 # ==================== LOG READING ====================
 
 def read_new_logs(log_file: str, last_size: int) -> Tuple[Optional[str], int]:
-    """Read new content from log file."""
+    """Read new content from log file since last read"""
     if not os.path.exists(log_file):
         return None, last_size
     
@@ -74,9 +69,8 @@ def read_new_logs(log_file: str, last_size: int) -> Tuple[Optional[str], int]:
     except:
         return None, last_size
 
-
 def get_log_count(log_file: str) -> int:
-    """Get number of lines in log file."""
+    """Get number of lines in log file"""
     if not os.path.exists(log_file):
         return 0
     
@@ -86,19 +80,15 @@ def get_log_count(log_file: str) -> int:
     except:
         return 0
 
-
 def clear_logs(log_file: str) -> Tuple[bool, Optional[str]]:
-    """Clear the log file."""
+    """Clear log file"""
     try:
-        # Check if file exists
         if not os.path.exists(log_file):
-            return True, None  # Already clear
+            return True, None
         
-        # Try to clear the file
         with open(log_file, 'w', encoding='utf-8') as f:
             f.write('')
         
-        # Verify it was cleared
         if os.path.getsize(log_file) == 0:
             return True, None
         else:
@@ -109,11 +99,10 @@ def clear_logs(log_file: str) -> Tuple[bool, Optional[str]]:
     except Exception as e:
         return False, str(e)
 
-
 # ==================== LOG PARSING ====================
 
 def parse_log_entry(line: str) -> Optional[Tuple[str, str, str]]:
-    """Parse a log entry line."""
+    """Parse log entry line: ["device_id", "timestamp", "message"]"""
     try:
         match = re.match(r'\["([^"]+)", "([^"]+)", "(.+)"\]', line)
         if match:
@@ -122,9 +111,8 @@ def parse_log_entry(line: str) -> Optional[Tuple[str, str, str]]:
         pass
     return None
 
-
 def parse_logs_for_csv(content: str) -> List[Tuple[str, str, str, str]]:
-    """Parse logs into rows for CSV."""
+    """Parse logs into rows for CSV export"""
     rows = []
     current_connection = ""
     
@@ -140,9 +128,8 @@ def parse_logs_for_csv(content: str) -> List[Tuple[str, str, str, str]]:
     
     return rows
 
-
 def parse_logs_for_json(content: str) -> List[Dict]:
-    """Parse logs into sessions for JSON."""
+    """Parse logs into sessions for JSON export"""
     sessions = []
     current_session = None
     
@@ -167,11 +154,10 @@ def parse_logs_for_json(content: str) -> List[Dict]:
     
     return sessions
 
-
 # ==================== EXPORT FUNCTIONS ====================
 
 def export_to_txt(content: str, output_path: str) -> Tuple[bool, Optional[str]]:
-    """Export to text file."""
+    """Export to text file"""
     try:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(content)
@@ -179,9 +165,8 @@ def export_to_txt(content: str, output_path: str) -> Tuple[bool, Optional[str]]:
     except Exception as e:
         return False, str(e)
 
-
 def export_to_csv(rows: List[Tuple], output_path: str) -> Tuple[bool, Optional[str]]:
-    """Export to CSV file."""
+    """Export to CSV file"""
     try:
         with open(output_path, "w", newline='', encoding="utf-8") as f:
             writer = csv.writer(f)
@@ -191,9 +176,8 @@ def export_to_csv(rows: List[Tuple], output_path: str) -> Tuple[bool, Optional[s
     except Exception as e:
         return False, str(e)
 
-
 def export_to_json(sessions: List[Dict], output_path: str) -> Tuple[bool, Optional[str]]:
-    """Export to JSON file."""
+    """Export to JSON file"""
     try:
         data = {
             "exported_at": datetime.datetime.now().isoformat(),
@@ -206,11 +190,10 @@ def export_to_json(sessions: List[Dict], output_path: str) -> Tuple[bool, Option
     except Exception as e:
         return False, str(e)
 
-
 # ==================== ENCRYPTION ====================
 
 def encrypt_logs_with_password(log_file: str, password: str, output_file: str = "logs.encrypted") -> Tuple[bool, Optional[str]]:
-    """Encrypt log file with AES-256 using user password."""
+    """Encrypt log file with AES-256 using PBKDF2 key derivation"""
     if not os.path.exists(log_file):
         return False, "Log file not found"
     
@@ -218,37 +201,34 @@ def encrypt_logs_with_password(log_file: str, password: str, output_file: str = 
         return False, "Password must be at least 4 characters"
     
     try:
-        # Generate a random salt
+        # Generate random salt for PBKDF2
         salt = get_random_bytes(32)
         
-        # Derive key from password using PBKDF2
+        # Derive encryption key from password
         from Crypto.Protocol.KDF import PBKDF2
         key = PBKDF2(password, salt, dkLen=32, count=100000)
         
-        # Create cipher
+        # Encrypt using AES-EAX mode
         cipher = AES.new(key, AES.MODE_EAX)
         
-        # Read log file
         with open(log_file, "rb") as f:
             data = f.read()
         
-        # Encrypt
         ciphertext, tag = cipher.encrypt_and_digest(data)
         
-        # Save encrypted file with salt, nonce, tag, and ciphertext
+        # Save: salt + nonce + tag + ciphertext
         with open(output_file, "wb") as f:
             f.write(salt)  # 32 bytes
             f.write(cipher.nonce)  # 16 bytes
             f.write(tag)  # 16 bytes
-            f.write(ciphertext)  # variable length
+            f.write(ciphertext)
         
         return True, None
     except Exception as e:
         return False, str(e)
 
-
 def decrypt_logs_with_password(encrypted_file: str, password: str, output_file: str) -> Tuple[bool, Optional[str]]:
-    """Decrypt log file with AES-256 using user password."""
+    """Decrypt log file with AES-256 using password"""
     if not os.path.exists(encrypted_file):
         return False, "Encrypted file not found"
     
@@ -256,24 +236,21 @@ def decrypt_logs_with_password(encrypted_file: str, password: str, output_file: 
         return False, "Password required"
     
     try:
-        # Read encrypted file
+        # Read encrypted file components
         with open(encrypted_file, "rb") as f:
             salt = f.read(32)
             nonce = f.read(16)
             tag = f.read(16)
             ciphertext = f.read()
         
-        # Derive key from password using same parameters
+        # Derive same key from password
         from Crypto.Protocol.KDF import PBKDF2
         key = PBKDF2(password, salt, dkLen=32, count=100000)
         
-        # Create cipher
+        # Decrypt and verify tag
         cipher = AES.new(key, AES.MODE_EAX, nonce=nonce)
-        
-        # Decrypt and verify
         plaintext = cipher.decrypt_and_verify(ciphertext, tag)
         
-        # Save decrypted file
         with open(output_file, "wb") as f:
             f.write(plaintext)
         
