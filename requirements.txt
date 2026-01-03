@@ -1,3 +1,42 @@
-PyQt6
-pynput
-pycryptodome
+# GUI and Interface
+PyQt6>=6.4.0
+
+# Keyboard Monitoring
+pynput>=1.7.6
+
+# Cryptography and Security
+pycryptodome>=3.18.0
+
+# Executable Builder (for creating standalone .exe files)
+pyinstaller>=5.13.0
+
+# Networking (built-in modules, no install needed)
+# - socket
+# - threading
+# - json
+
+# System and File Operations (built-in modules, no install needed)
+# - os
+# - platform
+# - datetime
+# - time
+# - re
+
+# Installation Instructions:
+# --------------------------
+# pip install -r requirements.txt
+#
+# Or install with system packages flag if needed:
+# pip install -r requirements.txt --break-system-packages
+#
+# Platform-specific notes:
+# - Windows: All dependencies should install without issues
+# - Linux: May need python3-dev and build-essential for pycryptodome
+# - macOS: May need Xcode command line tools
+#
+# Building executables:
+# ---------------------
+# To create a standalone .exe file on Windows:
+#   cd exe
+#   pyinstaller keylogger.spec
+# This creates keylogger.exe in exe/dist/ folder

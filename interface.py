@@ -101,7 +101,7 @@ class KeyloggerServerGUI(QWidget):
         header.addStretch()
         
         # Add settings button
-        settings_btn = QPushButton("⚙ Settings")
+        settings_btn = QPushButton("Settings")
         settings_btn.clicked.connect(self.open_settings)
         header.addWidget(settings_btn)
         

