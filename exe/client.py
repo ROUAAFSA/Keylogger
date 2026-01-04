@@ -3,7 +3,7 @@ import socket
 import platform
 import json
 
-SERVER_IP = "192.168.211.148" 
+SERVER_IP = "localhost" 
 SERVER_PORT = 9999
 
 # Default configuration 

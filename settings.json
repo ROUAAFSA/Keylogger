@@ -5,5 +5,5 @@
   "server_port": 9999,
   "default_export_folder": "",
   "default_export_format": "txt",
-  "log_file_path": "server-copy.txt",
+  "log_file_path": "server-copy.txt"
 }
